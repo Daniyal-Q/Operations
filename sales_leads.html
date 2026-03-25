@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Leads — Fleet Management</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0c0f;
+  --surface: #111318;
+  --surface2: #181c23;
+  --border: rgba(255,255,255,0.07);
+  --border-active: rgba(80,200,255,0.4);
+  --accent: #38d9f5;
+  --accent2: #7b6fff;
+  --text: #e8eaf0;
+  --muted: #5a6070;
+  --danger: #ff5f6d;
+  --success: #3dffa0;
+  --warn: #ffb347;
+  --mono: 'DM Mono', monospace;
+  --display: 'Syne', sans-serif;
+}
+
+body {
+  font-family: var(--mono);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px 80px;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(56,217,245,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56,217,245,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  height: 500px;
+  background: radial-gradient(ellipse, rgba(123,111,255,0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.shell {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 860px;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 36px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.header-left .label {
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent2);
+  margin-bottom: 6px;
+}
+
+.header-left h1 {
+  font-family: var(--display);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.header-left h1 span { color: var(--accent2); }
+
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.lead-id {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 4px;
+}
+
+/* Tab bar */
+.tab-bar {
+  display: flex;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 5px;
+  margin-bottom: 28px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-btn.active {
+  background: rgba(123,111,255,0.12);
+  color: var(--accent2);
+  border: 1px solid rgba(123,111,255,0.25);
+}
+
+.tab-btn:hover:not(.active) { color: var(--text); }
+
+/* ── Card ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 36px;
+  animation: fadeSlide 0.3s ease;
+}
+
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* Section head */
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(123,111,255,0.1);
+  border: 1px solid rgba(123,111,255,0.2);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.section-head h2 {
+  font-family: var(--display);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.section-head p { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* Grid */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 22px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0 22px; }
+.col-span-2 { grid-column: span 2; }
+.col-span-3 { grid-column: span 3; }
+
+/* Fields */
+.field { margin-bottom: 18px; }
+
+.field label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 10px 14px;
+  outline: none;
+  transition: all 0.2s;
+  appearance: none;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: rgba(123,111,255,0.45);
+  background: rgba(123,111,255,0.04);
+  box-shadow: 0 0 0 3px rgba(123,111,255,0.08);
+}
+
+.field textarea { height: 90px; resize: none; }
+
+.field select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%235a6070' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+
+.field select option { background: #1a1e26; color: var(--text); }
+.field input::placeholder, .field textarea::placeholder { color: var(--muted); }
+
+/* Status pill selector */
+.status-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.status-pill {
+  padding: 8px 16px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+
+.status-pill:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+.status-pill.s-new.selected    { background: rgba(56,217,245,0.1);  border-color: rgba(56,217,245,0.4);  color: var(--accent); }
+.status-pill.s-warm.selected   { background: rgba(255,179,71,0.1);  border-color: rgba(255,179,71,0.4);  color: var(--warn); }
+.status-pill.s-hot.selected    { background: rgba(255,95,109,0.12); border-color: rgba(255,95,109,0.4);  color: var(--danger); }
+.status-pill.s-closed.selected { background: rgba(61,255,160,0.1);  border-color: rgba(61,255,160,0.4);  color: var(--success); }
+.status-pill.s-lost.selected   { background: rgba(90,96,112,0.2);   border-color: rgba(90,96,112,0.4);   color: var(--muted); }
+
+input[name="status"] { display: none; }
+
+/* Source pills */
+.source-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.source-pill {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.source-pill:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+.source-pill.selected {
+  background: rgba(123,111,255,0.12);
+  border-color: rgba(123,111,255,0.4);
+  color: var(--accent2);
+}
+
+input[name="source"] { display: none; }
+
+/* Divider */
+.divider-label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 12px 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.divider-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* Submit row */
+.submit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.btn {
+  padding: 11px 24px;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.btn-ghost:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+.btn-submit {
+  background: linear-gradient(135deg, #7b6fff, #38d9f5);
+  color: #0a0c0f;
+  font-weight: 700;
+  border: none;
+}
+.btn-submit:hover {
+  box-shadow: 0 0 20px rgba(123,111,255,0.4);
+  transform: translateY(-1px);
+}
+.btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* Error banner */
+.error-banner {
+  display: none;
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: rgba(255,95,109,0.1);
+  border: 1px solid rgba(255,95,109,0.3);
+  border-radius: 8px;
+  color: var(--danger);
+  font-size: 12px;
+}
+
+/* ── Leads Table ── */
+.table-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.search-box {
+  flex: 1;
+  min-width: 200px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 9px 14px;
+  outline: none;
+  transition: all 0.2s;
+}
+.search-box:focus { border-color: rgba(123,111,255,0.4); }
+.search-box::placeholder { color: var(--muted); }
+
+.filter-select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 9px 32px 9px 14px;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%235a6070' d='M5 6L0 0h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  transition: all 0.2s;
+}
+.filter-select:focus { border-color: rgba(123,111,255,0.4); color: var(--text); }
+.filter-select option { background: #1a1e26; }
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+thead tr {
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+
+thead th {
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+tbody td {
+  padding: 13px 14px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.td-muted { color: var(--muted); }
+
+/* Status badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; }
+
+.badge-new    { background: rgba(56,217,245,0.1);  color: var(--accent);   }
+.badge-new::before    { background: var(--accent); }
+.badge-warm   { background: rgba(255,179,71,0.1);  color: var(--warn);     }
+.badge-warm::before   { background: var(--warn); }
+.badge-hot    { background: rgba(255,95,109,0.12); color: var(--danger);   }
+.badge-hot::before    { background: var(--danger); }
+.badge-closed { background: rgba(61,255,160,0.1);  color: var(--success);  }
+.badge-closed::before { background: var(--success); }
+.badge-lost   { background: rgba(90,96,112,0.15);  color: var(--muted);    }
+.badge-lost::before   { background: var(--muted); }
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+.empty-state .icon { font-size: 36px; margin-bottom: 14px; opacity: 0.4; }
+.empty-state p { color: var(--muted); font-size: 13px; }
+
+/* Stats bar */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-align: center;
+}
+
+.stat-card .num {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-card .lbl {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.num-total  { color: var(--text); }
+.num-new    { color: var(--accent); }
+.num-warm   { color: var(--warn); }
+.num-hot    { color: var(--danger); }
+.num-closed { color: var(--success); }
+
+/* Success screen */
+.success-screen {
+  display: none;
+  text-align: center;
+  padding: 60px 20px;
+  animation: fadeSlide 0.4s ease;
+}
+.success-screen.active { display: block; }
+.success-icon {
+  width: 72px;
+  height: 72px;
+  background: rgba(61,255,160,0.1);
+  border: 1px solid rgba(61,255,160,0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  margin: 0 auto 24px;
+}
+.success-screen h2 { font-family: var(--display); font-size: 22px; font-weight: 700; color: var(--success); margin-bottom: 8px; }
+.success-screen p  { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+
+/* Loading */
+.loading-row td {
+  text-align: center;
+  padding: 40px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .col-span-2, .col-span-3 { grid-column: span 1; }
+  .stats-bar { grid-template-columns: repeat(3, 1fr); }
+  .card { padding: 20px 16px; }
+  .header-left h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<script src="crm-core.js"></script>
+<script>
+const _u2 = crmGuard('leads');
+</script>
+
+<div class="shell" style="margin-left:220px;padding:32px;max-width:calc(100% - 220px)">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="label">Fleet Management System</div>
+      <h1>Sales <span>Leads</span></h1>
+    </div>
+    <div class="header-right">
+      <div class="lead-id" id="leadIdLabel">LD---------</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('form', this)">＋ New Lead</button>
+    <button class="tab-btn" onclick="switchTab('leads', this)">📋 All Leads</button>
+  </div>
+
+  <!-- Card -->
+  <div class="card">
+
+    <!-- ══ TAB: FORM ══ -->
+    <div class="tab-panel active" id="panel-form">
+
+      <div id="formWrap">
+        <div class="section-head">
+          <div class="section-icon">🎯</div>
+          <div>
+            <h2>New Sales Lead</h2>
+            <p>Forward a new lead from the sales department</p>
+          </div>
+        </div>
+
+        <form id="leadForm">
+
+          <!-- Customer -->
+          <div class="divider-label">Customer</div>
+          <div class="grid-2">
+            <div class="field">
+              <label>Customer Name</label>
+              <input name="customerName" placeholder="Full name" required>
+            </div>
+            <div class="field">
+              <label>Contact Number</label>
+              <input name="contact" placeholder="+92 XXX XXXXXXX">
+            </div>
+            <div class="field">
+              <label>City</label>
+              <input name="city" placeholder="Lahore, Karachi…">
+            </div>
+            <div class="field">
+              <label>Email (optional)</label>
+              <input type="email" name="email" placeholder="customer@email.com">
+            </div>
+          </div>
+
+          <!-- Package interest -->
+          <div class="divider-label">Package / Pricing Interest</div>
+          <div class="grid-2">
+            <div class="field">
+              <label>Interested Package</label>
+              <select name="package">
+                <option value="">Select package…</option>
+                <option>Basic Tracker</option>
+                <option>Standard</option>
+                <option>Premium</option>
+                <option>Fleet Bundle</option>
+                <option>Custom / Enterprise</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>No. of Vehicles</label>
+              <input name="vehicles" placeholder="e.g. 3">
+            </div>
+            <div class="field">
+              <label>Budget Range</label>
+              <select name="budget">
+                <option value="">Select…</option>
+                <option>Under PKR 10,000</option>
+                <option>PKR 10,000 – 25,000</option>
+                <option>PKR 25,000 – 50,000</option>
+                <option>PKR 50,000+</option>
+                <option>To be discussed</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Follow-up Date</label>
+              <input type="date" name="followUpDate">
+            </div>
+          </div>
+
+          <!-- Status -->
+          <div class="divider-label">Lead Status</div>
+          <div class="field">
+            <label>Current Status</label>
+            <div class="status-options">
+              <div class="status-pill s-new"    onclick="selectPill('status','New',    this)">🔵 New</div>
+              <div class="status-pill s-warm"   onclick="selectPill('status','Warm',   this)">🟡 Warm</div>
+              <div class="status-pill s-hot"    onclick="selectPill('status','Hot',    this)">🔴 Hot</div>
+              <div class="status-pill s-closed" onclick="selectPill('status','Closed', this)">🟢 Closed</div>
+              <div class="status-pill s-lost"   onclick="selectPill('status','Lost',   this)">⚫ Lost</div>
+            </div>
+            <input type="hidden" name="status" id="statusHidden">
+          </div>
+
+          <!-- Source -->
+          <div class="divider-label">Source</div>
+          <div class="field">
+            <label>How did they hear about us?</label>
+            <div class="source-options">
+              <div class="source-pill" onclick="selectPill('source','Referral',       this)">Referral</div>
+              <div class="source-pill" onclick="selectPill('source','Walk-in',        this)">Walk-in</div>
+              <div class="source-pill" onclick="selectPill('source','Social Media',   this)">Social Media</div>
+              <div class="source-pill" onclick="selectPill('source','WhatsApp',       this)">WhatsApp</div>
+              <div class="source-pill" onclick="selectPill('source','Cold Call',      this)">Cold Call</div>
+              <div class="source-pill" onclick="selectPill('source','Website',        this)">Website</div>
+              <div class="source-pill" onclick="selectPill('source','Existing Client',this)">Existing Client</div>
+              <div class="source-pill" onclick="selectPill('source','Other',          this)">Other</div>
+            </div>
+            <input type="hidden" name="source" id="sourceHidden">
+          </div>
+
+          <!-- Sales person + Notes -->
+          <div class="divider-label">Assignment & Notes</div>
+          <div class="grid-2">
+            <div class="field">
+              <label>Assigned Sales Person</label>
+              <input name="salesPerson" placeholder="Name of sales rep">
+            </div>
+            <div class="field">
+              <label>Date Forwarded</label>
+              <input type="date" name="dateForwarded" id="dateForwarded">
+            </div>
+            <div class="field col-span-2">
+              <label>Notes / Remarks</label>
+              <textarea name="notes" placeholder="Any additional details, customer requirements, or special instructions…"></textarea>
+            </div>
+          </div>
+
+        </form>
+
+        <div class="submit-row">
+          <span style="font-size:11px;color:var(--muted);">Lead ID: <strong id="submitLeadId" style="color:var(--text)"></strong></span>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-ghost" onclick="clearForm()">Clear</button>
+            <button class="btn btn-submit" id="btnSubmit" onclick="submitLead()">Forward Lead →</button>
+          </div>
+        </div>
+
+        <div class="error-banner" id="errorBanner"></div>
+      </div>
+
+      <!-- Success -->
+      <div class="success-screen" id="successScreen">
+        <div class="success-icon">✓</div>
+        <h2>Lead Forwarded</h2>
+        <p>The sales lead has been recorded and sent to Google Sheets.</p>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+          <button class="btn btn-ghost" onclick="resetForm()">Add Another Lead</button>
+          <button class="btn btn-submit" onclick="switchTab('leads', document.querySelectorAll('.tab-btn')[1])">View All Leads →</button>
+        </div>
+      </div>
+
+    </div><!-- /panel-form -->
+
+    <!-- ══ TAB: LEADS TABLE ══ -->
+    <div class="tab-panel" id="panel-leads">
+
+      <div class="section-head">
+        <div class="section-icon">📊</div>
+        <div>
+          <h2>All Leads</h2>
+          <p>Live view pulled from Google Sheets</p>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-bar">
+        <div class="stat-card"><div class="num num-total"  id="st-total">—</div><div class="lbl">Total</div></div>
+        <div class="stat-card"><div class="num num-new"    id="st-new">—</div><div class="lbl">New</div></div>
+        <div class="stat-card"><div class="num num-warm"   id="st-warm">—</div><div class="lbl">Warm</div></div>
+        <div class="stat-card"><div class="num num-hot"    id="st-hot">—</div><div class="lbl">Hot</div></div>
+        <div class="stat-card"><div class="num num-closed" id="st-closed">—</div><div class="lbl">Closed</div></div>
+      </div>
+
+      <!-- Controls -->
+      <div class="table-controls">
+        <input class="search-box" id="searchBox" placeholder="Search by name, contact, sales person…" oninput="filterTable()">
+        <select class="filter-select" id="filterStatus" onchange="filterTable()">
+          <option value="">All Statuses</option>
+          <option>New</option>
+          <option>Warm</option>
+          <option>Hot</option>
+          <option>Closed</option>
+          <option>Lost</option>
+        </select>
+        <button class="btn btn-ghost" onclick="loadLeads()" style="white-space:nowrap;">↻ Refresh</button>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap">
+        <table id="leadsTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Customer</th>
+              <th>Contact</th>
+              <th>City</th>
+              <th>Package</th>
+              <th>Status</th>
+              <th>Source</th>
+              <th>Sales Person</th>
+              <th>Follow-up</th>
+            </tr>
+          </thead>
+          <tbody id="leadsBody">
+            <tr class="loading-row"><td colspan="9">Click Refresh to load leads from Google Sheets…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div><!-- /panel-leads -->
+
+  </div><!-- /card -->
+
+</div><!-- /shell -->
+
+<script>
+// URL comes from crm-core.js — no need to set it here
+function genId() { return 'LD-' + Date.now().toString(36).toUpperCase().slice(-8); }
+
+let currentLeadId = genId();
+document.getElementById('leadIdLabel').textContent  = currentLeadId;
+document.getElementById('submitLeadId').textContent = currentLeadId;
+document.getElementById('dateForwarded').valueAsDate = new Date();
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'leads') loadLeads();
+}
+
+function selectPill(field, value, el) {
+  el.parentElement.querySelectorAll('[onclick]').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById(field + 'Hidden').value = value;
+}
+
+async function submitLead() {
+  const form = document.getElementById('leadForm');
+  const data = Object.fromEntries(new FormData(form).entries());
+
+  if (!data.customerName.trim()) { showLeadError('Customer name is required.'); return; }
+
+  data.leadId   = currentLeadId;
+  data.action   = 'submitLead';            // tells Apps Script which handler to use
+  data.sheetTab = 'Sales Leads';
+
+  const btn = document.getElementById('btnSubmit');
+  btn.textContent = 'Forwarding…';
+  btn.disabled    = true;
+  document.getElementById('errorBanner').style.display = 'none';
+
+  try {
+    const result = await crmPost(data);    // uses crm-core.js — reads response back
+    if (result.status === 'error') throw new Error(result.message);
+    document.getElementById('formWrap').style.display = 'none';
+    document.getElementById('successScreen').classList.add('active');
+  } catch (err) {
+    btn.textContent = 'Forward Lead →';
+    btn.disabled    = false;
+    showLeadError('Submission failed: ' + (err.message || 'check your network'));
+  }
+}
+
+function showLeadError(msg) {
+  const b = document.getElementById('errorBanner');
+  b.textContent = '⚠ ' + msg;
+  b.style.display = 'block';
+}
+
+function clearForm() {
+  document.getElementById('leadForm').reset();
+  document.querySelectorAll('.status-pill, .source-pill').forEach(p => p.classList.remove('selected'));
+  document.getElementById('statusHidden').value  = '';
+  document.getElementById('sourceHidden').value  = '';
+  document.getElementById('dateForwarded').valueAsDate = new Date();
+}
+
+function resetForm() {
+  clearForm();
+  currentLeadId = genId();
+  document.getElementById('leadIdLabel').textContent  = currentLeadId;
+  document.getElementById('submitLeadId').textContent = currentLeadId;
+  document.getElementById('formWrap').style.display   = 'block';
+  document.getElementById('successScreen').classList.remove('active');
+  document.getElementById('btnSubmit').textContent    = 'Forward Lead →';
+  document.getElementById('btnSubmit').disabled       = false;
+}
+
+let allLeads = [];
+
+async function loadLeads() {
+  const tbody = document.getElementById('leadsBody');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="9">Loading from Google Sheets…</td></tr>';
+  resetStats();
+  try {
+    const json = await crmGet({ action: 'getLeads' });    // uses crm-core.js
+    allLeads   = json.data || [];
+    renderTable(allLeads);
+    updateStats(allLeads);
+  } catch (err) {
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="9" style="color:var(--danger)">
+      ⚠ Could not load leads — ${err.message || 'check your Script URL in crm-core.js'}
+    </td></tr>`;
+  }
+}
+
+function renderTable(leads) {
+  const tbody = document.getElementById('leadsBody');
+  if (!leads.length) {
+    tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="icon">📭</div><p>No leads found</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = leads.map(r => `
+    <tr>
+      <td class="td-muted">${r.dateForwarded||'—'}</td>
+      <td><strong>${r.customerName||'—'}</strong></td>
+      <td class="td-muted">${r.contact||'—'}</td>
+      <td class="td-muted">${r.city||'—'}</td>
+      <td>${r.package||'—'}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td class="td-muted">${r.source||'—'}</td>
+      <td>${r.salesPerson||'—'}</td>
+      <td class="td-muted">${r.followUpDate||'—'}</td>
+    </tr>`).join('');
+}
+
+function statusBadge(s) {
+  const map = { New:'new', Warm:'warm', Hot:'hot', Closed:'closed', Lost:'lost' };
+  return `<span class="badge badge-${map[s]||'new'}">${s||'New'}</span>`;
+}
+
+function filterTable() {
+  const q  = document.getElementById('searchBox').value.toLowerCase();
+  const st = document.getElementById('filterStatus').value;
+  renderTable(allLeads.filter(r => {
+    const mq  = !q  || [r.customerName,r.contact,r.salesPerson,r.city].some(v=>(v||'').toLowerCase().includes(q));
+    const mst = !st || r.status === st;
+    return mq && mst;
+  }));
+}
+
+function updateStats(leads) {
+  document.getElementById('st-total').textContent  = leads.length;
+  document.getElementById('st-new').textContent    = leads.filter(r=>r.status==='New').length;
+  document.getElementById('st-warm').textContent   = leads.filter(r=>r.status==='Warm').length;
+  document.getElementById('st-hot').textContent    = leads.filter(r=>r.status==='Hot').length;
+  document.getElementById('st-closed').textContent = leads.filter(r=>r.status==='Closed').length;
+}
+
+function resetStats() {
+  ['total','new','warm','hot','closed'].forEach(k => document.getElementById('st-'+k).textContent = '—');
+}
+
+if (typeof crmNav === 'function') crmNav('leads');
+</script>
+</body>
+</html>
