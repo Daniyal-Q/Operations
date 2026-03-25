@@ -49,6 +49,16 @@
       "avatar": "DA",
       "active": true,
       "createdAt": "2026-03-25"
+    },
+    {
+      "id": "usr_mn67x1mx",
+      "username": "usama.ali@fams.com",
+      "password": "Bestboy@12",
+      "name": "Usama Ali",
+      "role": "admin",
+      "avatar": "UA",
+      "active": true,
+      "createdAt": "2026-03-25"
     }
   ]
 }
