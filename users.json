@@ -2,8 +2,8 @@
   "users": [
     {
       "id": "usr_001",
-      "username": "admin",
-      "password": "admin1234",
+      "username": "sultan",
+      "password": "Sultan@5683",
       "name": "System Admin",
       "role": "admin",
       "avatar": "SA",
