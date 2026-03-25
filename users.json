@@ -39,6 +39,16 @@
       "avatar": "MG",
       "active": true,
       "createdAt": "2026-01-01"
+    },
+    {
+      "id": "usr_mn66ffjm",
+      "username": "daniyal.ahmed@fams.com",
+      "password": "Bestboy@12",
+      "name": "Daniyal Qureshi",
+      "role": "admin",
+      "avatar": "DA",
+      "active": true,
+      "createdAt": "2026-03-25"
     }
   ]
 }
