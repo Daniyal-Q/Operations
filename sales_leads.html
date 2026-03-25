@@ -591,6 +591,10 @@ tbody td {
 <script>
 const _u2 = crmGuard('leads');
 </script>
+<script>
+document.head.insertAdjacentHTML('beforeend', CRM_STYLE);
+crmNav('leads');
+</script>
 
 <div class="shell" style="margin-left:220px;padding:32px;max-width:calc(100% - 220px)">
 
@@ -821,14 +825,22 @@ const _u2 = crmGuard('leads');
 </div><!-- /shell -->
 
 <script>
-// URL comes from crm-core.js — no need to set it here
-function genId() { return 'LD-' + Date.now().toString(36).toUpperCase().slice(-8); }
+// ✏️  PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL BELOW (same one as Job Order, or a new deployment)
+const SCRIPT_URL = "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE";
+
+// ── Lead ID generator ──
+function genId() {
+  return 'LD-' + Date.now().toString(36).toUpperCase().slice(-8);
+}
 
 let currentLeadId = genId();
-document.getElementById('leadIdLabel').textContent  = currentLeadId;
+document.getElementById('leadIdLabel').textContent = currentLeadId;
 document.getElementById('submitLeadId').textContent = currentLeadId;
+
+// Set today's date
 document.getElementById('dateForwarded').valueAsDate = new Date();
 
+// ── Tabs ──
 function switchTab(name, btn) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -837,40 +849,49 @@ function switchTab(name, btn) {
   if (name === 'leads') loadLeads();
 }
 
+// ── Pill selectors ──
 function selectPill(field, value, el) {
-  el.parentElement.querySelectorAll('[onclick]').forEach(p => p.classList.remove('selected'));
+  const parent = el.parentElement;
+  parent.querySelectorAll('[onclick]').forEach(p => p.classList.remove('selected'));
   el.classList.add('selected');
   document.getElementById(field + 'Hidden').value = value;
 }
 
-async function submitLead() {
+// ── Submit ──
+function submitLead() {
   const form = document.getElementById('leadForm');
   const data = Object.fromEntries(new FormData(form).entries());
+  data.leadId = currentLeadId;
+  data.sheetTab = 'Sales Leads'; // ✏️ Change to your exact tab name
 
-  if (!data.customerName.trim()) { showLeadError('Customer name is required.'); return; }
-
-  data.leadId   = currentLeadId;
-  data.action   = 'submitLead';            // tells Apps Script which handler to use
-  data.sheetTab = 'Sales Leads';
+  if (!data.customerName.trim()) {
+    showError('Customer name is required.');
+    return;
+  }
 
   const btn = document.getElementById('btnSubmit');
   btn.textContent = 'Forwarding…';
-  btn.disabled    = true;
+  btn.disabled = true;
   document.getElementById('errorBanner').style.display = 'none';
 
-  try {
-    const result = await crmPost(data);    // uses crm-core.js — reads response back
-    if (result.status === 'error') throw new Error(result.message);
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(data)
+  })
+  .then(() => {
     document.getElementById('formWrap').style.display = 'none';
     document.getElementById('successScreen').classList.add('active');
-  } catch (err) {
+  })
+  .catch(() => {
     btn.textContent = 'Forward Lead →';
-    btn.disabled    = false;
-    showLeadError('Submission failed: ' + (err.message || 'check your network'));
-  }
+    btn.disabled = false;
+    showError('Network error — check your connection and try again.');
+  });
 }
 
-function showLeadError(msg) {
+function showError(msg) {
   const b = document.getElementById('errorBanner');
   b.textContent = '⚠ ' + msg;
   b.style.display = 'block';
@@ -879,37 +900,39 @@ function showLeadError(msg) {
 function clearForm() {
   document.getElementById('leadForm').reset();
   document.querySelectorAll('.status-pill, .source-pill').forEach(p => p.classList.remove('selected'));
-  document.getElementById('statusHidden').value  = '';
-  document.getElementById('sourceHidden').value  = '';
+  document.getElementById('statusHidden').value = '';
+  document.getElementById('sourceHidden').value = '';
   document.getElementById('dateForwarded').valueAsDate = new Date();
 }
 
 function resetForm() {
   clearForm();
   currentLeadId = genId();
-  document.getElementById('leadIdLabel').textContent  = currentLeadId;
+  document.getElementById('leadIdLabel').textContent = currentLeadId;
   document.getElementById('submitLeadId').textContent = currentLeadId;
-  document.getElementById('formWrap').style.display   = 'block';
+  document.getElementById('formWrap').style.display = 'block';
   document.getElementById('successScreen').classList.remove('active');
-  document.getElementById('btnSubmit').textContent    = 'Forward Lead →';
-  document.getElementById('btnSubmit').disabled       = false;
+  document.getElementById('btnSubmit').textContent = 'Forward Lead →';
+  document.getElementById('btnSubmit').disabled = false;
 }
 
+// ── Load leads from Google Sheets ──
 let allLeads = [];
 
 async function loadLeads() {
   const tbody = document.getElementById('leadsBody');
-  tbody.innerHTML = '<tr class="loading-row"><td colspan="9">Loading from Google Sheets…</td></tr>';
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="9">Loading…</td></tr>';
   resetStats();
+
   try {
-    const json = await crmGet({ action: 'getLeads' });    // uses crm-core.js
-    allLeads   = json.data || [];
+    // Read from sheet as JSON — append ?action=getLeads to your script URL
+    const res = await fetch(SCRIPT_URL + '?action=getLeads&tab=Sales%20Leads', { cache: 'no-store' });
+    const json = await res.json();
+    allLeads = json.data || [];
     renderTable(allLeads);
     updateStats(allLeads);
-  } catch (err) {
-    tbody.innerHTML = `<tr class="loading-row"><td colspan="9" style="color:var(--danger)">
-      ⚠ Could not load leads — ${err.message || 'check your Script URL in crm-core.js'}
-    </td></tr>`;
+  } catch {
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="9" style="color:var(--danger)">⚠ Could not load leads. Make sure your Apps Script URL is set and the doGet function is deployed.</td></tr>';
   }
 }
 
@@ -919,48 +942,52 @@ function renderTable(leads) {
     tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="icon">📭</div><p>No leads found</p></div></td></tr>';
     return;
   }
+
   tbody.innerHTML = leads.map(r => `
     <tr>
-      <td class="td-muted">${r.dateForwarded||'—'}</td>
-      <td><strong>${r.customerName||'—'}</strong></td>
-      <td class="td-muted">${r.contact||'—'}</td>
-      <td class="td-muted">${r.city||'—'}</td>
-      <td>${r.package||'—'}</td>
+      <td class="td-muted">${r.dateForwarded || '—'}</td>
+      <td><strong>${r.customerName || '—'}</strong></td>
+      <td class="td-muted">${r.contact || '—'}</td>
+      <td class="td-muted">${r.city || '—'}</td>
+      <td>${r.package || '—'}</td>
       <td>${statusBadge(r.status)}</td>
-      <td class="td-muted">${r.source||'—'}</td>
-      <td>${r.salesPerson||'—'}</td>
-      <td class="td-muted">${r.followUpDate||'—'}</td>
-    </tr>`).join('');
+      <td class="td-muted">${r.source || '—'}</td>
+      <td>${r.salesPerson || '—'}</td>
+      <td class="td-muted">${r.followUpDate || '—'}</td>
+    </tr>
+  `).join('');
 }
 
 function statusBadge(s) {
   const map = { New:'new', Warm:'warm', Hot:'hot', Closed:'closed', Lost:'lost' };
-  return `<span class="badge badge-${map[s]||'new'}">${s||'New'}</span>`;
+  const cls = map[s] || 'new';
+  return `<span class="badge badge-${cls}">${s || 'New'}</span>`;
 }
 
 function filterTable() {
-  const q  = document.getElementById('searchBox').value.toLowerCase();
+  const q = document.getElementById('searchBox').value.toLowerCase();
   const st = document.getElementById('filterStatus').value;
-  renderTable(allLeads.filter(r => {
-    const mq  = !q  || [r.customerName,r.contact,r.salesPerson,r.city].some(v=>(v||'').toLowerCase().includes(q));
-    const mst = !st || r.status === st;
-    return mq && mst;
-  }));
+  const filtered = allLeads.filter(r => {
+    const matchQ = !q || [r.customerName, r.contact, r.salesPerson, r.city].some(v => (v||'').toLowerCase().includes(q));
+    const matchSt = !st || r.status === st;
+    return matchQ && matchSt;
+  });
+  renderTable(filtered);
 }
 
 function updateStats(leads) {
   document.getElementById('st-total').textContent  = leads.length;
-  document.getElementById('st-new').textContent    = leads.filter(r=>r.status==='New').length;
-  document.getElementById('st-warm').textContent   = leads.filter(r=>r.status==='Warm').length;
-  document.getElementById('st-hot').textContent    = leads.filter(r=>r.status==='Hot').length;
-  document.getElementById('st-closed').textContent = leads.filter(r=>r.status==='Closed').length;
+  document.getElementById('st-new').textContent    = leads.filter(r => r.status === 'New').length;
+  document.getElementById('st-warm').textContent   = leads.filter(r => r.status === 'Warm').length;
+  document.getElementById('st-hot').textContent    = leads.filter(r => r.status === 'Hot').length;
+  document.getElementById('st-closed').textContent = leads.filter(r => r.status === 'Closed').length;
 }
 
 function resetStats() {
   ['total','new','warm','hot','closed'].forEach(k => document.getElementById('st-'+k).textContent = '—');
 }
 
-if (typeof crmNav === 'function') crmNav('leads');
+if(typeof crmNav==='function') crmNav('leads');
 </script>
 </body>
 </html>
