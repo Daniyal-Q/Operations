@@ -59,6 +59,56 @@
       "avatar": "UA",
       "active": true,
       "createdAt": "2026-03-25"
+    },
+    {
+      "id": "usr_mn77vyij",
+      "username": "afsaha.irfan@fams.com",
+      "password": "3377536",
+      "name": "Afsaha Irfan",
+      "role": "sales",
+      "avatar": "AI",
+      "active": true,
+      "createdAt": "2026-03-26"
+    },
+    {
+      "id": "usr_mn77z16f",
+      "username": "haider.amin@fams.com",
+      "password": "Haider12@fams!?",
+      "name": "Haider Amin",
+      "role": "sales",
+      "avatar": "HA",
+      "active": true,
+      "createdAt": "2026-03-26"
+    },
+    {
+      "id": "usr_mn780csq",
+      "username": "manan.younas@fams.com",
+      "password": "manan12@fams!?",
+      "name": "Manan Younas",
+      "role": "sales",
+      "avatar": "MY",
+      "active": true,
+      "createdAt": "2026-03-26"
+    },
+    {
+      "id": "usr_mn782hqy",
+      "username": "hashim.khan@fams.com",
+      "password": "Hashim12@fams!?",
+      "name": "Hashim Mughal",
+      "role": "sales",
+      "avatar": "HM",
+      "active": true,
+      "createdAt": "2026-03-26"
+    },
+    {
+      "id": "usr_mn7843r6",
+      "username": "sami.rahman@fams.com",
+      "password": "Sami12@fms!?",
+      "name": "Sami-ur-Rahman",
+      "role": "management",
+      "avatar": "SR",
+      "active": true,
+      "createdAt": "2026-03-26"
     }
   ]
 }
