@@ -280,11 +280,11 @@ body::after {
 }
 
 .status-pill:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
-.status-pill.s-new.selected    { background: rgba(56,217,245,0.1);  border-color: rgba(56,217,245,0.4);  color: var(--accent); }
-.status-pill.s-warm.selected   { background: rgba(255,179,71,0.1);  border-color: rgba(255,179,71,0.4);  color: var(--warn); }
-.status-pill.s-hot.selected    { background: rgba(255,95,109,0.12); border-color: rgba(255,95,109,0.4);  color: var(--danger); }
-.status-pill.s-closed.selected { background: rgba(61,255,160,0.1);  border-color: rgba(61,255,160,0.4);  color: var(--success); }
-.status-pill.s-lost.selected   { background: rgba(90,96,112,0.2);   border-color: rgba(90,96,112,0.4);   color: var(--muted); }
+.status-pill.s-pending.selected   { background: rgba(56,217,245,0.1);  border-color: rgba(56,217,245,0.4);  color: var(--accent); }
+.status-pill.s-followup.selected  { background: rgba(255,179,71,0.1);  border-color: rgba(255,179,71,0.4);  color: var(--warn); }
+.status-pill.s-confirmed.selected { background: rgba(123,111,255,0.12);border-color: rgba(123,111,255,0.4); color: var(--accent2); }
+.status-pill.s-installed.selected { background: rgba(61,255,160,0.1);  border-color: rgba(61,255,160,0.4);  color: var(--success); }
+.status-pill.s-cancelled.selected { background: rgba(90,96,112,0.2);   border-color: rgba(90,96,112,0.4);   color: var(--muted); }
 
 input[name="status"] { display: none; }
 
@@ -490,16 +490,16 @@ tbody td {
 
 .badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; }
 
-.badge-new    { background: rgba(56,217,245,0.1);  color: var(--accent);   }
-.badge-new::before    { background: var(--accent); }
-.badge-warm   { background: rgba(255,179,71,0.1);  color: var(--warn);     }
-.badge-warm::before   { background: var(--warn); }
-.badge-hot    { background: rgba(255,95,109,0.12); color: var(--danger);   }
-.badge-hot::before    { background: var(--danger); }
-.badge-closed { background: rgba(61,255,160,0.1);  color: var(--success);  }
-.badge-closed::before { background: var(--success); }
-.badge-lost   { background: rgba(90,96,112,0.15);  color: var(--muted);    }
-.badge-lost::before   { background: var(--muted); }
+.badge-pending   { background: rgba(56,217,245,0.1);  color: var(--accent);  }
+.badge-pending::before   { background: var(--accent); }
+.badge-followup  { background: rgba(255,179,71,0.1);  color: var(--warn);    }
+.badge-followup::before  { background: var(--warn); }
+.badge-confirmed { background: rgba(123,111,255,0.12);color: var(--accent2); }
+.badge-confirmed::before { background: var(--accent2); }
+.badge-installed { background: rgba(61,255,160,0.1);  color: var(--success); }
+.badge-installed::before { background: var(--success); }
+.badge-cancelled { background: rgba(90,96,112,0.15);  color: var(--muted);   }
+.badge-cancelled::before { background: var(--muted); }
 
 /* Empty state */
 .empty-state {
@@ -512,7 +512,7 @@ tbody td {
 /* Stats bar */
 .stats-bar {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 10px;
   margin-bottom: 24px;
 }
@@ -540,11 +540,12 @@ tbody td {
   color: var(--muted);
 }
 
-.num-total  { color: var(--text); }
-.num-new    { color: var(--accent); }
-.num-warm   { color: var(--warn); }
-.num-hot    { color: var(--danger); }
-.num-closed { color: var(--success); }
+.num-total     { color: var(--text); }
+.num-pending   { color: var(--accent); }
+.num-followup  { color: var(--warn); }
+.num-confirmed { color: var(--accent2); }
+.num-installed { color: var(--success); }
+.num-cancelled { color: var(--muted); }
 
 /* Success screen */
 .success-screen {
@@ -702,11 +703,11 @@ document.head.insertAdjacentHTML('beforeend', CRM_STYLE);
           <div class="field">
             <label>Current Status</label>
             <div class="status-options">
-              <div class="status-pill s-new"    onclick="selectPill('status','New',    this)">🔵 New</div>
-              <div class="status-pill s-warm"   onclick="selectPill('status','Warm',   this)">🟡 Warm</div>
-              <div class="status-pill s-hot"    onclick="selectPill('status','Hot',    this)">🔴 Hot</div>
-              <div class="status-pill s-closed" onclick="selectPill('status','Closed', this)">🟢 Closed</div>
-              <div class="status-pill s-lost"   onclick="selectPill('status','Lost',   this)">⚫ Lost</div>
+              <div class="status-pill s-pending"   onclick="selectPill('status','Pending',   this)">🔵 Pending</div>
+              <div class="status-pill s-followup"  onclick="selectPill('status','Follow Up', this)">🟡 Follow Up</div>
+              <div class="status-pill s-confirmed" onclick="selectPill('status','Confirmed', this)">🟣 Confirmed</div>
+              <div class="status-pill s-installed" onclick="selectPill('status','Installed', this)">🟢 Installed</div>
+              <div class="status-pill s-cancelled" onclick="selectPill('status','Cancelled', this)">⚫ Cancelled</div>
             </div>
             <input type="hidden" name="status" id="statusHidden">
           </div>
@@ -784,11 +785,12 @@ document.head.insertAdjacentHTML('beforeend', CRM_STYLE);
 
       <!-- Stats -->
       <div class="stats-bar">
-        <div class="stat-card"><div class="num num-total"  id="st-total">—</div><div class="lbl">Total</div></div>
-        <div class="stat-card"><div class="num num-new"    id="st-new">—</div><div class="lbl">New</div></div>
-        <div class="stat-card"><div class="num num-warm"   id="st-warm">—</div><div class="lbl">Warm</div></div>
-        <div class="stat-card"><div class="num num-hot"    id="st-hot">—</div><div class="lbl">Hot</div></div>
-        <div class="stat-card"><div class="num num-closed" id="st-closed">—</div><div class="lbl">Closed</div></div>
+        <div class="stat-card"><div class="num num-total"     id="st-total">—</div><div class="lbl">Total</div></div>
+        <div class="stat-card"><div class="num num-pending"   id="st-pending">—</div><div class="lbl">Pending</div></div>
+        <div class="stat-card"><div class="num num-followup"  id="st-followup">—</div><div class="lbl">Follow Up</div></div>
+        <div class="stat-card"><div class="num num-confirmed" id="st-confirmed">—</div><div class="lbl">Confirmed</div></div>
+        <div class="stat-card"><div class="num num-installed" id="st-installed">—</div><div class="lbl">Installed</div></div>
+        <div class="stat-card"><div class="num num-cancelled" id="st-cancelled">—</div><div class="lbl">Cancelled</div></div>
       </div>
 
       <!-- Controls -->
@@ -796,7 +798,7 @@ document.head.insertAdjacentHTML('beforeend', CRM_STYLE);
         <input class="search-box" id="searchBox" placeholder="Search by name, contact, sales person…" oninput="filterTable()">
         <select class="filter-select" id="filterStatus" onchange="filterTable()">
           <option value="">All Lead Statuses</option>
-          <option>New</option><option>Warm</option><option>Hot</option><option>Closed</option><option>Lost</option>
+          <option>Pending</option><option>Follow Up</option><option>Confirmed</option><option>Installed</option><option>Cancelled</option>
         </select>
         <select class="filter-select" id="filterInstall" onchange="filterTable()">
           <option value="">All Install Status</option>
@@ -879,6 +881,8 @@ async function submitLead() {
   try {
     const result = await crmPost(data);
     if (result.status === 'error') throw new Error(result.message);
+    // Clear all fields right away so they're blank when the user returns
+    clearForm();
     document.getElementById('formWrap').style.display = 'none';
     document.getElementById('successScreen').classList.add('active');
   } catch (err) {
@@ -927,7 +931,7 @@ function renderTable(leads) {
   const tbody = document.getElementById('leadsBody');
   if (!leads.length) { tbody.innerHTML='<tr><td colspan="12"><div class="empty-state"><div class="icon">📭</div><p>No leads found</p></div></td></tr>'; return; }
   tbody.innerHTML = leads.map((r,i) => {
-    const iCls = r.installStatus==='Installed'?'badge-closed':r.installStatus==='Cancelled'?'badge-lost':'badge-warm';
+    const iCls = r.installStatus==='Installed'?'badge-installed':r.installStatus==='Cancelled'?'badge-cancelled':'badge-pending';
     const iLbl = r.installStatus||'Pending';
     const pCls = r.paymentStatus==='Paid'?'badge-closed':r.paymentStatus==='Partial'?'badge-warn':r.paymentStatus==='Refunded'?'badge-lost':'badge-lost';
     const pLbl = r.paymentStatus||'Unpaid';
@@ -954,8 +958,14 @@ function renderTable(leads) {
 }
 
 function statusBadge(s) {
-  const map={New:'new',Warm:'warm',Hot:'hot',Closed:'closed',Lost:'lost'};
-  return `<span class="badge badge-${map[s]||'new'}">${s||'New'}</span>`;
+  const map = {
+    'Pending':   'pending',
+    'Follow Up': 'followup',
+    'Confirmed': 'confirmed',
+    'Installed': 'installed',
+    'Cancelled': 'cancelled',
+  };
+  return `<span class="badge badge-${map[s]||'pending'}">${s||'Pending'}</span>`;
 }
 
 function filterTable() {
@@ -971,13 +981,16 @@ function filterTable() {
 }
 
 function updateStats(leads) {
-  document.getElementById('st-total').textContent  = leads.length;
-  document.getElementById('st-new').textContent    = leads.filter(r=>r.status==='New').length;
-  document.getElementById('st-warm').textContent   = leads.filter(r=>r.status==='Warm').length;
-  document.getElementById('st-hot').textContent    = leads.filter(r=>r.status==='Hot').length;
-  document.getElementById('st-closed').textContent = leads.filter(r=>r.status==='Closed').length;
+  document.getElementById('st-total').textContent     = leads.length;
+  document.getElementById('st-pending').textContent   = leads.filter(r=>r.status==='Pending').length;
+  document.getElementById('st-followup').textContent  = leads.filter(r=>r.status==='Follow Up').length;
+  document.getElementById('st-confirmed').textContent = leads.filter(r=>r.status==='Confirmed').length;
+  document.getElementById('st-installed').textContent = leads.filter(r=>r.status==='Installed').length;
+  document.getElementById('st-cancelled').textContent = leads.filter(r=>r.status==='Cancelled').length;
 }
-function resetStats() { ['total','new','warm','hot','closed'].forEach(k=>document.getElementById('st-'+k).textContent='—'); }
+function resetStats() {
+  ['total','pending','followup','confirmed','installed','cancelled'].forEach(k => document.getElementById('st-'+k).textContent = '—');
+}
 
 // ── Lead Edit Modal ──
 let editingLeadIdx = -1;
@@ -1001,7 +1014,7 @@ function openLeadEdit(idx) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 18px">
       <div class="field"><label>Lead Status</label>
         <select id="lem-status">
-          ${['New','Warm','Hot','Closed','Lost'].map(s=>`<option ${r.status===s?'selected':''}>${s}</option>`).join('')}
+          ${['Pending','Follow Up','Confirmed','Installed','Cancelled'].map(s=>`<option ${r.status===s?'selected':''}>${s}</option>`).join('')}
         </select></div>
       <div class="field"><label>Installation Status</label>
         <select id="lem-install">
