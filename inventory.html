@@ -83,15 +83,24 @@ const user = crmGuard('inventory');
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%235a6070' d='M5 6L0 0h10z'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 11px center}
 .flt-sel option{background:#1a1e26}
+.pagination{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap}
+.page-btns{display:flex;gap:6px}
+.page-info{font-size:11px;color:var(--muted)}
+.chk{width:14px;height:14px;accent-color:#38d9f5;cursor:pointer}
+.mgmt-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px}
+.mgmt-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-items:end}
+.hint{font-size:10px;color:var(--muted)}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:768px){
   .stock-cards{grid-template-columns:1fr 1fr}
   .form-row{grid-template-columns:1fr 1fr}
+  .mgmt-grid{grid-template-columns:1fr 1fr}
 }
 @media(max-width:480px){
   .stock-cards{grid-template-columns:1fr}
   .form-row{grid-template-columns:1fr}
+  .mgmt-grid{grid-template-columns:1fr}
 }
 </style>
 
@@ -159,6 +168,7 @@ const user = crmGuard('inventory');
           <div><h2>Tracker Inventory</h2><p>All units with current status</p></div>
         </div>
         <div class="tbl-controls">
+          <label style="display:flex;align-items:center;gap:6px;color:var(--muted);font-size:11px"><input class="chk" type="checkbox" id="t-select-all" onchange="toggleSelectAll('trackers', this.checked)">Select Page</label>
           <input class="search-inp" id="t-search" placeholder="Search IMEI, model, supplier…" oninput="filterTrackers()">
           <select class="flt-sel" id="t-filter" onchange="filterTrackers()">
             <option value="">All Status</option>
@@ -166,19 +176,50 @@ const user = crmGuard('inventory');
             <option>Assigned</option>
             <option>Faulty</option>
           </select>
+          <select class="flt-sel" id="t-page-size" onchange="setPageSize('trackers', this.value)">
+            <option value="10">10 / page</option><option value="25">25 / page</option><option value="50">50 / page</option>
+          </select>
           <button class="btn btn-ghost btn-sm" onclick="loadTrackers()">↻ Refresh</button>
+        </div>
+        <div class="mgmt-card">
+          <div class="mgmt-grid">
+            <div class="field"><label>Bulk Status</label><select id="t-bulk-status"><option value="">Select status…</option><option>Available</option><option>Assigned</option><option>Faulty</option><option>Inactive</option></select></div>
+            <div class="field"><label>Installer Name</label><input id="t-bulk-installer" placeholder="Installer"></div>
+            <div class="field"><label>City</label><input id="t-bulk-city" placeholder="City"></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" onclick="openEditSelectedTracker()">Edit IMEI</button>
+              <button class="btn btn-ghost btn-sm" onclick="bulkChangeStatus('trackers')">Apply Status</button>
+              <button class="btn btn-solid btn-sm" onclick="bulkAssignInstaller()">Bulk Assign</button>
+            </div>
+          </div>
+          <div class="hint">Bulk actions apply to selected tracker rows. Use “Edit IMEI” when exactly one tracker is selected.</div>
+        </div>
+        <div class="mgmt-card">
+          <div class="mgmt-grid">
+            <div class="field"><label>Link Tracker</label><select id="card-link-tracker" onchange="updateLinkCard()"><option value="">Select tracker…</option></select></div>
+            <div class="field"><label>Link SIM</label><select id="card-link-sim" onchange="updateLinkCard()"><option value="">Select SIM…</option></select></div>
+            <div class="field"><label>Installer</label><input id="card-link-installer" placeholder="Installer"></div>
+            <div class="field"><label>City</label><input id="card-link-city" placeholder="City"></div>
+          </div>
+          <div class="hint" id="link-card-details">Pick a tracker and SIM to view details and link/de-link quickly.</div>
+          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+            <button class="btn btn-solid btn-sm" onclick="linkFromCard()">Link</button>
+            <button class="btn btn-ghost btn-sm" onclick="deLinkFromCard()">De-link</button>
+          </div>
         </div>
         <div class="table-wrap">
           <table>
             <thead><tr>
+              <th><input class="chk" type="checkbox" id="t-select-all-head" onchange="toggleSelectAll('trackers', this.checked)"></th>
               <th>IMEI / Serial</th><th>Model</th><th>Supplier</th>
-              <th>Date In</th><th>Qty</th><th>Price</th><th>Status</th><th>Assigned To</th><th>Actions</th>
+              <th>Date In</th><th>Qty</th><th>Price</th><th>Status</th><th>Assigned To</th><th>Installer / City</th><th>Actions</th>
             </tr></thead>
             <tbody id="t-tbody">
-              <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--muted)">Click Refresh to load inventory…</td></tr>
+              <tr><td colspan="11" style="text-align:center;padding:40px;color:var(--muted)">Click Refresh to load inventory…</td></tr>
             </tbody>
           </table>
         </div>
+        <div class="pagination" id="t-pagination"></div>
       </div>
 
       <!-- Stock History -->
@@ -248,6 +289,7 @@ const user = crmGuard('inventory');
           <div><h2>SIM Inventory</h2><p>All SIM cards with install status</p></div>
         </div>
         <div class="tbl-controls">
+          <label style="display:flex;align-items:center;gap:6px;color:var(--muted);font-size:11px"><input class="chk" type="checkbox" id="s-select-all" onchange="toggleSelectAll('sims', this.checked)">Select Page</label>
           <input class="search-inp" id="s-search" placeholder="Search SIM number, ICCID, network…" oninput="filterSIMs()">
           <select class="flt-sel" id="s-filter" onchange="filterSIMs()">
             <option value="">All Status</option>
@@ -255,19 +297,26 @@ const user = crmGuard('inventory');
             <option>Installed</option>
             <option>Inactive</option>
           </select>
+          <select class="flt-sel" id="s-page-size" onchange="setPageSize('sims', this.value)">
+            <option value="10">10 / page</option><option value="25">25 / page</option><option value="50">50 / page</option>
+          </select>
+          <select class="flt-sel" id="s-bulk-status"><option value="">Bulk status…</option><option>Available</option><option>Installed</option><option>Inactive</option><option>Removed</option></select>
+          <button class="btn btn-ghost btn-sm" onclick="bulkChangeStatus('sims')">Apply SIM Status</button>
           <button class="btn btn-ghost btn-sm" onclick="loadSIMs()">↻ Refresh</button>
         </div>
         <div class="table-wrap">
           <table>
             <thead><tr>
+              <th><input class="chk" type="checkbox" id="s-select-all-head" onchange="toggleSelectAll('sims', this.checked)"></th>
               <th>SIM Number</th><th>ICCID</th><th>Network</th><th>Plan</th>
               <th>Date In</th><th>Qty</th><th>Status</th><th>Installed In</th><th>Actions</th>
             </tr></thead>
             <tbody id="s-tbody">
-              <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--muted)">Click Refresh to load SIMs…</td></tr>
+              <tr><td colspan="10" style="text-align:center;padding:40px;color:var(--muted)">Click Refresh to load SIMs…</td></tr>
             </tbody>
           </table>
         </div>
+        <div class="pagination" id="s-pagination"></div>
       </div>
 
       <!-- SIM History -->
@@ -310,6 +359,12 @@ const user = crmGuard('inventory');
     <div class="field"><label>Vehicle / Job Reference</label>
       <input id="assign-vehicle" placeholder="e.g. ABC-123 or JO-XXXXXXXX">
     </div>
+    <div class="field"><label>Installer Name</label>
+      <input id="assign-installer" placeholder="Installer">
+    </div>
+    <div class="field"><label>City</label>
+      <input id="assign-city" placeholder="City">
+    </div>
     <div class="field"><label>Notes</label>
       <input id="assign-notes" placeholder="Optional">
     </div>
@@ -317,6 +372,20 @@ const user = crmGuard('inventory');
     <div class="modal-btns">
       <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
       <button class="btn btn-solid" onclick="doAssign()">Assign →</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="editTrackerModal">
+  <div class="modal">
+    <h3>✏️ Edit Tracker IMEI & Status</h3>
+    <div class="field"><label>Current Key</label><input id="edit-current-key" disabled></div>
+    <div class="field"><label>New IMEI / Serial</label><input id="edit-imei" placeholder="Updated IMEI"></div>
+    <div class="field"><label>Status</label><select id="edit-status"><option>Available</option><option>Assigned</option><option>Faulty</option><option>Inactive</option></select></div>
+    <div class="error-banner" id="edit-err"></div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeEditTracker()">Cancel</button>
+      <button class="btn btn-solid" onclick="saveTrackerEdit()">Save</button>
     </div>
   </div>
 </div>
@@ -332,6 +401,13 @@ startClock(document.getElementById('clock'));
 });
 
 let trackersData = [], simsData = [];
+let filteredTrackers = [], filteredSIMs = [];
+const selectedTrackers = new Set();
+const selectedSIMs = new Set();
+const pager = {
+  trackers: { page: 1, size: 10 },
+  sims: { page: 1, size: 10 }
+};
 
 // ── Tab switch ──
 function switchInvTab(tab) {
@@ -410,6 +486,55 @@ function showBanner(el, msg) {
   el.style.display = 'block';
 }
 
+function keyFor(type, row) {
+  return type === 'trackers' ? (row.imei || row.entryId) : (row.simNumber || row.entryId);
+}
+
+function setPageSize(type, size) {
+  pager[type].size = Number(size) || 10;
+  pager[type].page = 1;
+  type === 'trackers' ? renderTrackers(filteredTrackers) : renderSIMs(filteredSIMs);
+}
+
+function renderPagination(type, total) {
+  const el = document.getElementById(type === 'trackers' ? 't-pagination' : 's-pagination');
+  const state = pager[type];
+  const pages = Math.max(1, Math.ceil(total / state.size));
+  if (state.page > pages) state.page = pages;
+  const start = total ? (state.page - 1) * state.size + 1 : 0;
+  const end = Math.min(total, state.page * state.size);
+  el.innerHTML = `
+    <div class="page-info">Showing ${start}-${end} of ${total}</div>
+    <div class="page-btns">
+      <button class="btn btn-ghost btn-sm" ${state.page === 1 ? 'disabled' : ''} onclick="gotoPage('${type}', ${state.page - 1})">← Prev</button>
+      <button class="btn btn-ghost btn-sm" ${state.page === pages ? 'disabled' : ''} onclick="gotoPage('${type}', ${state.page + 1})">Next →</button>
+    </div>
+  `;
+}
+
+function gotoPage(type, page) {
+  pager[type].page = Math.max(1, page);
+  type === 'trackers' ? renderTrackers(filteredTrackers) : renderSIMs(filteredSIMs);
+}
+
+function toggleSelect(type, key, checked) {
+  const set = type === 'trackers' ? selectedTrackers : selectedSIMs;
+  checked ? set.add(key) : set.delete(key);
+}
+
+function toggleSelectAll(type, checked) {
+  const list = type === 'trackers' ? filteredTrackers : filteredSIMs;
+  const state = pager[type];
+  const start = (state.page - 1) * state.size;
+  const pageRows = list.slice(start, start + state.size);
+  const set = type === 'trackers' ? selectedTrackers : selectedSIMs;
+  pageRows.forEach(r => {
+    const key = keyFor(type, r);
+    checked ? set.add(key) : set.delete(key);
+  });
+  type === 'trackers' ? renderTrackers(filteredTrackers) : renderSIMs(filteredSIMs);
+}
+
 // ── Load Trackers ──
 async function loadTrackers() {
   const tbody  = document.getElementById('t-tbody');
@@ -418,7 +543,9 @@ async function loadTrackers() {
   try {
     const res    = await crmGet({ action:'getInventory', tab:'Trackers' });
     trackersData = res.data || [];
-    renderTrackers(trackersData);
+    filteredTrackers = trackersData;
+    renderTrackers(filteredTrackers);
+    populateLinkCard();
     updateTrackerStats(trackersData);
     document.getElementById('tc-cnt').textContent = trackersData.length;
 
@@ -440,14 +567,21 @@ async function loadTrackers() {
 }
 
 function renderTrackers(data) {
+  filteredTrackers = data;
   const tbody = document.getElementById('t-tbody');
+  const start = (pager.trackers.page - 1) * pager.trackers.size;
+  const rows = data.slice(start, start + pager.trackers.size);
   if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="ei">📡</div><p>No trackers in inventory yet</p></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11"><div class="empty-state"><div class="ei">📡</div><p>No trackers in inventory yet</p></div></td></tr>';
+    renderPagination('trackers', 0);
     return;
   }
-  tbody.innerHTML = data.map(r => {
+  tbody.innerHTML = rows.map(r => {
     const cls = r.status==='Available'?'badge-available':r.status==='Assigned'?'badge-assigned':'badge-lost';
+    const key = (r.imei || r.entryId || '').replace(/'/g,"\\'");
+    const rawKey = r.imei || r.entryId;
     return `<tr>
+      <td><input class="chk" type="checkbox" ${selectedTrackers.has(rawKey) ? 'checked' : ''} onchange="toggleSelect('trackers','${key}', this.checked)"></td>
       <td><strong>${r.imei||'—'}</strong></td>
       <td>${r.model||'—'}</td>
       <td class="td-muted">${r.supplier||'—'}</td>
@@ -456,12 +590,16 @@ function renderTrackers(data) {
       <td class="td-muted">${r.price?'PKR '+Number(r.price).toLocaleString():'—'}</td>
       <td><span class="badge ${cls}">${r.status||'Available'}</span></td>
       <td class="td-muted">${r.assignedTo||'—'}</td>
+      <td class="td-muted">${r.installer||'—'} / ${r.city||'—'}</td>
       <td>
-        ${r.status==='Available'?`<button class="act-btn" onclick="openAssign('tracker','${r.imei}')">Assign SIM</button>`:''}
-        <button class="act-btn danger" onclick="stockOut('trackers','${r.imei||r.entryId}')">Out</button>
+        ${r.status==='Available'?`<button class="act-btn" onclick="openAssign('tracker','${key}')">Link SIM</button>`:''}
+        ${r.status==='Assigned'?`<button class="act-btn" onclick="deLinkSim('${key}')">De-link</button>`:''}
+        <button class="act-btn" onclick="openEditTracker('${key}')">Edit</button>
+        <button class="act-btn danger" onclick="stockOut('trackers','${key}')">Out</button>
       </td>
     </tr>`;
   }).join('');
+  renderPagination('trackers', data.length);
 }
 
 function updateTrackerStats(data) {
@@ -477,6 +615,7 @@ function updateTrackerStats(data) {
 function filterTrackers() {
   const q = document.getElementById('t-search').value.toLowerCase();
   const st = document.getElementById('t-filter').value;
+  pager.trackers.page = 1;
   renderTrackers(trackersData.filter(r => {
     const mq = !q || [r.imei,r.model,r.supplier].some(v=>(v||'').toLowerCase().includes(q));
     const ms = !st || r.status===st;
@@ -492,7 +631,9 @@ async function loadSIMs() {
   try {
     const res = await crmGet({ action:'getInventory', tab:'SIMs' });
     simsData  = res.data || [];
-    renderSIMs(simsData);
+    filteredSIMs = simsData;
+    renderSIMs(filteredSIMs);
+    populateLinkCard();
     updateSIMStats(simsData);
     document.getElementById('sc-cnt').textContent = simsData.length;
 
@@ -514,14 +655,21 @@ async function loadSIMs() {
 }
 
 function renderSIMs(data) {
+  filteredSIMs = data;
   const tbody = document.getElementById('s-tbody');
+  const start = (pager.sims.page - 1) * pager.sims.size;
+  const rows = data.slice(start, start + pager.sims.size);
   if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="ei">💳</div><p>No SIMs in inventory yet</p></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><div class="ei">💳</div><p>No SIMs in inventory yet</p></div></td></tr>';
+    renderPagination('sims', 0);
     return;
   }
-  tbody.innerHTML = data.map(r => {
+  tbody.innerHTML = rows.map(r => {
     const cls = r.status==='Available'?'badge-available':r.status==='Installed'?'badge-assigned':'badge-lost';
+    const key = ((r.simNumber || r.entryId) || '').replace(/'/g,"\\'");
+    const rawKey = r.simNumber || r.entryId;
     return `<tr>
+      <td><input class="chk" type="checkbox" ${selectedSIMs.has(rawKey) ? 'checked' : ''} onchange="toggleSelect('sims','${key}', this.checked)"></td>
       <td><strong>${r.simNumber||'—'}</strong></td>
       <td class="td-muted">${r.iccid||'—'}</td>
       <td>${r.network||'—'}</td>
@@ -532,10 +680,12 @@ function renderSIMs(data) {
       <td class="td-muted">${r.installedIn||'—'}</td>
       <td>
         ${r.status==='Available'?`<button class="act-btn" onclick="openAssign('sim','${r.simNumber}')">Install</button>`:''}
-        <button class="act-btn danger" onclick="stockOut('sims','${(r.simNumber||r.entryId).replace(/'/g,"\\'")}')">Out</button>
+        ${r.status==='Installed'?`<button class="act-btn" onclick="deLinkSim('', '${key}')">De-link</button>`:''}
+        <button class="act-btn danger" onclick="stockOut('sims','${key}')">Out</button>
       </td>
     </tr>`;
   }).join('');
+  renderPagination('sims', data.length);
 }
 
 function updateSIMStats(data) {
@@ -548,6 +698,7 @@ function updateSIMStats(data) {
 function filterSIMs() {
   const q  = document.getElementById('s-search').value.toLowerCase();
   const st = document.getElementById('s-filter').value;
+  pager.sims.page = 1;
   renderSIMs(simsData.filter(r => {
     const mq = !q  || [r.simNumber,r.iccid,r.network].some(v=>(v||'').toLowerCase().includes(q));
     const ms = !st || r.status === st;
@@ -562,11 +713,52 @@ function openAssign(preselect, value) {
   tSel.innerHTML = '<option value="">Select tracker…</option>' +
     trackersData.filter(r=>r.status==='Available').map(r=>`<option value="${r.imei}">${r.imei} — ${r.model||''}</option>`).join('');
   sSel.innerHTML = '<option value="">Select SIM…</option>' +
-    simsData.filter(r=>r.status==='Available').map(r=>`<option value="${r.simNumber}">${r.simNumber} — ${r.network||''}</option>`).join('');
+    simsData.filter(r=>r.status==='Available').map(r=>`<option value="${(r.simNumber||'').replace(/"/g,'&quot;')}">${r.simNumber} — ${r.network||''}</option>`).join('');
   if (preselect==='tracker') tSel.value = value;
   if (preselect==='sim')     sSel.value = value;
   document.getElementById('assign-err').style.display = 'none';
   document.getElementById('assignModal').classList.add('open');
+}
+
+function populateLinkCard() {
+  const t = document.getElementById('card-link-tracker');
+  const s = document.getElementById('card-link-sim');
+  if (!t || !s) return;
+  t.innerHTML = '<option value="">Select tracker…</option>' +
+    trackersData.map(r => `<option value="${(r.imei||r.entryId||'').replace(/"/g,'&quot;')}">${r.imei||r.entryId} — ${r.status||'—'}</option>`).join('');
+  s.innerHTML = '<option value="">Select SIM…</option>' +
+    simsData.map(r => `<option value="${(r.simNumber||r.entryId||'').replace(/"/g,'&quot;')}">${r.simNumber||r.entryId} — ${r.status||'—'}</option>`).join('');
+}
+
+function updateLinkCard() {
+  const tracker = document.getElementById('card-link-tracker').value;
+  const sim = document.getElementById('card-link-sim').value;
+  const t = trackersData.find(r => (r.imei || r.entryId) === tracker);
+  const s = simsData.find(r => (r.simNumber || r.entryId) === sim);
+  document.getElementById('link-card-details').textContent =
+    `Tracker: ${t ? `${t.imei||t.entryId} (${t.status||'—'})` : '—'} | SIM: ${s ? `${s.simNumber||s.entryId} (${s.status||'—'})` : '—'}`;
+}
+
+async function linkFromCard() {
+  const tracker = document.getElementById('card-link-tracker').value;
+  const sim = document.getElementById('card-link-sim').value;
+  const installer = document.getElementById('card-link-installer').value.trim();
+  const city = document.getElementById('card-link-city').value.trim();
+  if (!tracker || !sim) { alert('Choose both tracker and SIM first.'); return; }
+  document.getElementById('assign-tracker').innerHTML = `<option value="${tracker}">${tracker}</option>`;
+  document.getElementById('assign-sim').innerHTML = `<option value="${sim}">${sim}</option>`;
+  document.getElementById('assign-tracker').value = tracker;
+  document.getElementById('assign-sim').value = sim;
+  document.getElementById('assign-installer').value = installer;
+  document.getElementById('assign-city').value = city;
+  await doAssign();
+}
+
+async function deLinkFromCard() {
+  const tracker = document.getElementById('card-link-tracker').value;
+  const sim = document.getElementById('card-link-sim').value;
+  if (!tracker && !sim) { alert('Select tracker or SIM to de-link.'); return; }
+  await deLinkSim(tracker, sim);
 }
 
 function closeModal() {
@@ -577,6 +769,8 @@ async function doAssign() {
   const tracker = document.getElementById('assign-tracker').value;
   const sim     = document.getElementById('assign-sim').value;
   const vehicle = document.getElementById('assign-vehicle').value.trim();
+  const installer = document.getElementById('assign-installer').value.trim();
+  const city = document.getElementById('assign-city').value.trim();
   const notes   = document.getElementById('assign-notes').value.trim();
   const errEl   = document.getElementById('assign-err');
   errEl.style.display = 'none';
@@ -590,6 +784,8 @@ async function doAssign() {
     trackerIMEI: tracker,
     simNumber:   sim,
     vehicle,
+    installer,
+    city,
     notes,
     assignDate:  new Date().toISOString().split('T')[0],
     assignedBy:  user ? user.name : 'Unknown',
@@ -610,6 +806,113 @@ async function doAssign() {
     setTimeout(() => ok.remove(), 3000);
   } catch (err) {
     showBanner(errEl, 'Failed: ' + (err.message || 'check connection'));
+  }
+}
+
+function openEditTracker(key) {
+  const row = trackersData.find(r => (r.imei || r.entryId) === key);
+  if (!row) return;
+  document.getElementById('edit-current-key').value = key;
+  document.getElementById('edit-imei').value = row.imei || '';
+  document.getElementById('edit-status').value = row.status || 'Available';
+  document.getElementById('edit-err').style.display = 'none';
+  document.getElementById('editTrackerModal').classList.add('open');
+}
+
+function closeEditTracker() {
+  document.getElementById('editTrackerModal').classList.remove('open');
+}
+
+function openEditSelectedTracker() {
+  if (selectedTrackers.size !== 1) { alert('Select exactly one tracker for IMEI edit.'); return; }
+  openEditTracker([...selectedTrackers][0]);
+}
+
+async function saveTrackerEdit() {
+  const oldKey = document.getElementById('edit-current-key').value;
+  const imei = document.getElementById('edit-imei').value.trim();
+  const status = document.getElementById('edit-status').value;
+  const err = document.getElementById('edit-err');
+  if (!imei) { showBanner(err, 'IMEI is required'); return; }
+  try {
+    const user = crmCurrentUser();
+    const res = await crmPost({
+      sheetTab: 'Trackers',
+      action: 'editTracker',
+      id: oldKey,
+      imei,
+      status,
+      updatedBy: user ? user.name : 'Unknown'
+    });
+    if (res.status === 'error') throw new Error(res.message);
+    closeEditTracker();
+    await loadTrackers();
+  } catch (e) {
+    showBanner(err, 'Failed: ' + (e.message || 'Could not update tracker'));
+  }
+}
+
+async function bulkChangeStatus(type) {
+  const isT = type === 'trackers';
+  const ids = [...(isT ? selectedTrackers : selectedSIMs)];
+  if (!ids.length) { alert('Please select at least one row.'); return; }
+  const status = document.getElementById(isT ? 't-bulk-status' : 's-bulk-status').value;
+  if (!status) { alert('Please choose a status first.'); return; }
+  const user = crmCurrentUser();
+  try {
+    const res = await crmPost({
+      sheetTab: isT ? 'Trackers' : 'SIMs',
+      action: 'bulkStatusUpdate',
+      ids,
+      status,
+      updatedBy: user ? user.name : 'Unknown'
+    });
+    if (res.status === 'error') throw new Error(res.message);
+    isT ? selectedTrackers.clear() : selectedSIMs.clear();
+    isT ? loadTrackers() : loadSIMs();
+  } catch (e) {
+    alert('Bulk status update failed: ' + (e.message || 'Server rejected request'));
+  }
+}
+
+async function bulkAssignInstaller() {
+  const ids = [...selectedTrackers];
+  if (!ids.length) { alert('Select trackers first.'); return; }
+  const installer = document.getElementById('t-bulk-installer').value.trim();
+  const city = document.getElementById('t-bulk-city').value.trim();
+  if (!installer && !city) { alert('Enter installer or city.'); return; }
+  const user = crmCurrentUser();
+  try {
+    const res = await crmPost({
+      sheetTab: 'Trackers',
+      action: 'bulkAssignMeta',
+      ids,
+      installer,
+      city,
+      updatedBy: user ? user.name : 'Unknown'
+    });
+    if (res.status === 'error') throw new Error(res.message);
+    selectedTrackers.clear();
+    await loadTrackers();
+  } catch (e) {
+    alert('Bulk assign failed: ' + (e.message || 'Server rejected request'));
+  }
+}
+
+async function deLinkSim(trackerKey = '', simKey = '') {
+  const user = crmCurrentUser();
+  try {
+    const res = await crmPost({
+      sheetTab: 'Assignments',
+      action: 'deLink',
+      trackerIMEI: trackerKey || undefined,
+      simNumber: simKey || undefined,
+      removedBy: user ? user.name : 'Unknown'
+    });
+    if (res.status === 'error') throw new Error(res.message);
+    await Promise.all([loadTrackers(), loadSIMs()]);
+  } catch (e) {
+    alert('De-link failed: ' + (e.message || 'Server rejected request'));
   }
 }
 
@@ -636,6 +939,9 @@ async function stockOut(type, id) {
 // Close modal on overlay click
 document.getElementById('assignModal').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
+});
+document.getElementById('editTrackerModal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditTracker();
 });
 </script>
 </body>
